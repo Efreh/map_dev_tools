@@ -1,5 +1,7 @@
 ruby:
-  style_url = options[:style_url]
+  style_name = params[:style]
+  external_style_url = params[:style_url]
+  style_url = external_style_url || (style_name ? "#{request.base_url}/styles/#{style_name}" : options[:style_url])
 
 #loading-indicator
   .loading-progress
@@ -7,7 +9,7 @@ ruby:
     .progress-bar
       .progress-fill
 
-- if options[:style_url] || should_show_map?
+- if style_name || external_style_url || options[:style_url]
   .layer-controls
     .mode-switcher
       button.mode-button.active id="mode-filters" onclick="switchMode(this, 'filters')" Filters
@@ -164,35 +166,12 @@ javascript:
     const createMap = (container, style) => new maplibregl.Map({
         container,
         style,
-        center:
-    #
-    {
-        {
-            options[
-        :
-            center
-        ].
-            to_json
-        }
-    }
-    ,
-    zoom: #
-    {
-        options[
-    :
-        zoom
-    ]
-    }
-    ,
-    attributionControl: false,
-        validateStyle
-    :
-    false,
-        antialias
-    :
-    true
-    })
-    ;
+        center: [35.15, 47.41],
+        zoom: 2,
+        attributionControl: false,
+        validateStyle: false,
+        antialias: true
+    });
 
     const addBasemapToStyle = (originalStyle) => {
         const modifiedStyle = JSON.parse(JSON.stringify(originalStyle));
@@ -200,35 +179,15 @@ javascript:
         modifiedStyle.sources = modifiedStyle.sources || {};
         modifiedStyle.sources['preview-basemap'] = {
             type: 'raster',
-            tiles:
-    #
-        {
-            {
-                options[
-            :
-                basemap_tiles
-            ].
-                to_json
-            }
-        }
-    ,
-        tileSize: 256,
-            maxzoom
-    :
-        19,
-            attribution
-    : #
-        {
-            {
-                options[
-            :
-                basemap_attribution
-            ].
-                to_json
-            }
-        }
-    }
-        ;
+            tiles: [
+                'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+            ],
+            tileSize: 256,
+            maxzoom: 19,
+            attribution: '© OpenStreetMap contributors'
+        };
 
         modifiedStyle.layers = modifiedStyle.layers || [];
         modifiedStyle.layers.unshift({
@@ -236,21 +195,8 @@ javascript:
             type: 'raster',
             source: 'preview-basemap',
             layout: {visibility: 'visible'},
-            paint: {'raster-opacity':
-    #
-        {
-            options[
-        :
-            basemap_opacity
-        ]
-        }
-    ,
-        'raster-fade-duration'
-    :
-        300
-    }
-    })
-        ;
+            paint: {'raster-opacity': 0.8, 'raster-fade-duration': 300}
+        });
 
         return modifiedStyle;
     };

@@ -10,20 +10,6 @@ module MapDevTools
   CONTOUR_VERSION = '0.1.0'
   D3_VERSION = '7'
 
-  DEFAULT_OPTIONS = {
-    style_url: nil,
-    external_style_url: nil,
-    basemap_tiles: [
-      'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
-    ],
-    basemap_attribution: '© OpenStreetMap contributors',
-    basemap_opacity: 0.8,
-    center: [35.15, 47.41],
-    zoom: 2
-  }.freeze
-
   # Rack middleware for serving static JS files from gem
   class StaticMiddleware
     def initialize(app)
@@ -58,57 +44,37 @@ module MapDevTools
   module Extension
     def self.registered(app)
       app.helpers Helpers
-      app.set :map_dev_tools_options, DEFAULT_OPTIONS
       app.use StaticMiddleware
     end
   end
 
   # Helper methods for map development tools
   module Helpers
-    def render_map_dev_tools(options = {})
-      render_with_gem_views(:map, layout: :map_layout, options: options)
-    end
-
-    def render_map_layout(options = {})
-      render_with_gem_views(:map_layout, options: options)
-    end
-
-    private
-
-    def render_with_gem_views(template, layout: nil, options: {})
-      merged_options = settings.map_dev_tools_options.merge(options)
+    def render_map_dev_tools
       gem_views_path = File.expand_path('map_dev_tools/views', __dir__)
-
-      with_gem_views(gem_views_path) do
-        render_template(template, layout, merged_options)
-      end
-    end
-
-    def with_gem_views(gem_views_path)
       original_views = settings.views
       settings.set :views, gem_views_path
-      yield
+      slim(:map, layout: :map_layout)
     ensure
       settings.set :views, original_views
     end
 
-    def render_template(template, layout, options)
-      if layout
-        slim(template, layout: layout, locals: { options: options })
-      else
-        slim(template, locals: { options: options })
-      end
+    def render_map_layout
+      gem_views_path = File.expand_path('map_dev_tools/views', __dir__)
+      original_views = settings.views
+
+      settings.set :views, gem_views_path
+      slim(:map_layout)
+    ensure
+      settings.set :views, original_views
     end
 
     def style_url
-      external_style_url = params[:style_url]
-      options_style_url = settings.map_dev_tools_options[:style_url]
-
-      external_style_url || options_style_url
+      params[:style_url]
     end
 
     def should_show_map?
-      !!(params[:style] || params[:style_url] || params[:source] || settings.map_dev_tools_options[:style_url])
+      !!(params[:style] || params[:style_url] || params[:source])
     end
   end
 
@@ -119,7 +85,6 @@ module MapDevTools
     configure do
       set :views, File.expand_path('map_dev_tools/views', __dir__)
       set :public_folder, File.expand_path('map_dev_tools/public', __dir__)
-      set :map_dev_tools_options, DEFAULT_OPTIONS
     end
 
     get '/js/:file' do
@@ -127,8 +92,7 @@ module MapDevTools
     end
 
     get '/map' do
-      options = settings.map_dev_tools_options
-      slim :map, layout: :map_layout, locals: { options: options }
+      slim :map, layout: :map_layout
     end
 
     private

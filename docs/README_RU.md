@@ -57,17 +57,32 @@ require 'map_dev_tools'
 class MyApp < Sinatra::Base
   register MapDevTools::Extension
   
-  # Настройка опций карты
-  set :map_dev_tools_options, {
-    style_url: 'https://your-style-url.com/style.json',
-    center: [35.15, 47.41],
-    zoom: 2
-  }
-  
   get '/map' do
     render_map_dev_tools
   end
 end
+```
+
+### Передача URL стиля
+
+Есть несколько способов передать URL стиля карте:
+
+**1. Через параметр URL:**
+```
+http://localhost:9292/map?style_url=https://example.com/style.json
+```
+
+**2. Через параметр маршрута:**
+```ruby
+get '/map' do
+  params[:style_url] = 'https://example.com/style.json'
+  render_map_dev_tools
+end
+```
+
+**3. Через параметр source:**
+```
+http://localhost:9292/map?source=Example_Style
 ```
 
 ### Автономный сервер разработки
@@ -88,12 +103,6 @@ MapDevTools::App.run!
 
 **Как использовать со стилем:**
 - Передать URL стиля как параметр: `http://localhost:4567/map?style_url=https://example.com/style.json`
-- Или настроить стиль по умолчанию в опциях:
-```ruby
-MapDevTools::App.set :map_dev_tools_options, {
-  style_url: 'https://example.com/style.json'
-}
-```
 
 **Без стиля:**
 - Показывает только базовые тайлы (OpenStreetMap)
@@ -105,19 +114,16 @@ MapDevTools::App.set :map_dev_tools_options, {
 - Разработка и отладка
 - Демонстрация возможностей
 
-## Опции конфигурации
+## Конфигурация
 
-| Опция | По умолчанию | Описание |
-|-------|--------------|----------|
-| `style_url` | `nil` | URL стиля MapLibre по умолчанию для загрузки |
-| `external_style_url` | `nil` | Параметр внешнего URL стиля |
-| `center` | `[35.15, 47.41]` | Начальные координаты центра карты |
-| `zoom` | `2` | Начальный уровень масштабирования |
-| `basemap_tiles` | Тайлы OpenStreetMap | Массив URL тайлов базовой карты |
-| `basemap_attribution` | `'© OpenStreetMap contributors'` | Текст атрибуции базовой карты |
-| `basemap_opacity` | `0.8` | Прозрачность слоя базовой карты |
+Gem использует фиксированные настройки:
 
-**Примечание:** Версии библиотек (MapLibre GL JS 5.7.3, MapLibre Contour 0.1.0, D3.js 7)
+- **Центр карты**: `[35.15, 47.41]`
+- **Начальный зум**: `2`
+- **Базовая карта**: Тайлы OpenStreetMap с прозрачностью 0.8
+- **Версии библиотек**: MapLibre GL JS 5.7.3, MapLibre Contour 0.1.0, D3.js 7
+
+**URL стиля**: Передается через параметр URL `?style_url=https://example.com/style.json`
 
 ## Справочник API
 
@@ -126,22 +132,15 @@ MapDevTools::App.set :map_dev_tools_options, {
 ```ruby
 # Регистрация расширения
 register MapDevTools::Extension
-
-# Настройка опций
-set :map_dev_tools_options, {
-  style_url: 'https://example.com/style.json',
-  center: [0, 0],
-  zoom: 5
-}
 ```
 
 ### Вспомогательные методы
 
 | Метод | Описание | Параметры |
 |-------|----------|-----------|
-| `render_map_dev_tools(options = {})` | Рендеринг полного интерфейса разработки карт | `options` - Хэш переопределений конфигурации |
-| `render_map_layout(options = {})` | Рендеринг только макета карты | `options` - Хэш переопределений конфигурации |
-| `style_url` | Получение текущего URL стиля из параметров или опций | Нет |
+| `render_map_dev_tools` | Рендеринг полного интерфейса разработки карт | Нет |
+| `render_map_layout` | Рендеринг только макета карты | Нет |
+| `style_url` | Получение текущего URL стиля из параметров | Нет |
 | `should_show_map?` | Проверка, должна ли отображаться карта | Нет |
 
 ### Автономное приложение
@@ -271,31 +270,19 @@ class MyApp < Sinatra::Base
   register MapDevTools::Extension
   
   get '/map' do
-    render_map_dev_tools({
-      style_url: 'https://api.maptiler.com/maps/streets/style.json?key=YOUR_KEY'
-    })
+    render_map_dev_tools
   end
 end
 ```
 
-### Пользовательская конфигурация
+### Интеграция URL стиля
 
 ```ruby
 class MyApp < Sinatra::Base
   register MapDevTools::Extension
   
-  configure do
-    set :map_dev_tools_options, {
-      center: [37.6173, 55.7558],  # Координаты Москвы
-      zoom: 10,
-      basemap_tiles: [
-        'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-      ],
-      basemap_attribution: '© OpenStreetMap contributors'
-    }
-  end
-  
   get '/map' do
+    # URL стиля передается через params[:style_url]
     render_map_dev_tools
   end
 end
@@ -308,15 +295,14 @@ class MyApp < Sinatra::Base
   register MapDevTools::Extension
   
   get '/map' do
-    render_map_dev_tools({
-      style_url: params[:style_url]
-    })
+    # Использует params[:style_url] если предоставлен
+    render_map_dev_tools
   end
   
   get '/terrain' do
-    render_map_dev_tools({
-      style_url: 'https://example.com/terrain-style.json'
-    })
+    # Устанавливаем URL стиля через params
+    params[:style_url] = 'https://example.com/terrain-style.json'
+    render_map_dev_tools
   end
 end
 ```

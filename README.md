@@ -57,17 +57,32 @@ require 'map_dev_tools'
 class MyApp < Sinatra::Base
   register MapDevTools::Extension
   
-  # Configure map options
-  set :map_dev_tools_options, {
-    style_url: 'https://your-style-url.com/style.json',
-    center: [35.15, 47.41],
-    zoom: 2
-  }
-  
   get '/map' do
     render_map_dev_tools
   end
 end
+```
+
+### Passing Style URL
+
+There are several ways to pass a style URL to the map:
+
+**1. Via URL parameter:**
+```
+http://localhost:9292/map?style_url=https://example.com/style.json
+```
+
+**2. Via route parameter:**
+```ruby
+get '/map' do
+  params[:style_url] = 'https://example.com/style.json'
+  render_map_dev_tools
+end
+```
+
+**3. Via source parameter:**
+```
+http://localhost:9292/map?source=Example_Style
 ```
 
 ### Standalone Development Server
@@ -88,12 +103,6 @@ This starts a complete web server with:
 
 **How to use with a style:**
 - Pass style URL as parameter: `http://localhost:4567/map?style_url=https://example.com/style.json`
-- Or configure default style in options:
-```ruby
-MapDevTools::App.set :map_dev_tools_options, {
-  style_url: 'https://example.com/style.json'
-}
-```
 
 **Without a style:**
 - Shows only basemap tiles (OpenStreetMap)
@@ -105,19 +114,16 @@ MapDevTools::App.set :map_dev_tools_options, {
 - Development and debugging
 - Demonstrating capabilities
 
-## Configuration Options
+## Configuration
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `style_url` | `nil` | Default MapLibre style URL to load |
-| `external_style_url` | `nil` | External style URL parameter |
-| `center` | `[35.15, 47.41]` | Initial map center coordinates |
-| `zoom` | `2` | Initial zoom level |
-| `basemap_tiles` | OpenStreetMap tiles | Basemap tile URLs array |
-| `basemap_attribution` | `'© OpenStreetMap contributors'` | Basemap attribution text |
-| `basemap_opacity` | `0.8` | Basemap layer opacity |
+The gem uses fixed configurations for optimal compatibility:
 
-**Note:** Library versions (MapLibre GL JS 5.7.3, MapLibre Contour 0.1.0, D3.js 7)
+- **Map Center**: `[35.15, 47.41]`
+- **Initial Zoom**: `2`
+- **Basemap**: OpenStreetMap tiles with 0.8 opacity
+- **Library Versions**: MapLibre GL JS 5.7.3, MapLibre Contour 0.1.0, D3.js 7
+
+**Style URL**: Pass via URL parameter `?style_url=https://example.com/style.json`
 
 ## API Reference
 
@@ -126,22 +132,15 @@ MapDevTools::App.set :map_dev_tools_options, {
 ```ruby
 # Register the extension
 register MapDevTools::Extension
-
-# Configure options
-set :map_dev_tools_options, {
-  style_url: 'https://example.com/style.json',
-  center: [0, 0],
-  zoom: 5
-}
 ```
 
 ### Helper Methods
 
 | Method | Description | Parameters |
 |--------|-------------|------------|
-| `render_map_dev_tools(options = {})` | Render complete map development interface | `options` - Hash of configuration overrides |
-| `render_map_layout(options = {})` | Render map layout only | `options` - Hash of configuration overrides |
-| `style_url` | Get current style URL from params or options | None |
+| `render_map_dev_tools` | Render complete map development interface | None |
+| `render_map_layout` | Render map layout only | None |
+| `style_url` | Get current style URL from params | None |
 | `should_show_map?` | Check if map should be displayed | None |
 
 ### Standalone Application
@@ -271,31 +270,19 @@ class MyApp < Sinatra::Base
   register MapDevTools::Extension
   
   get '/map' do
-    render_map_dev_tools({
-      style_url: 'https://api.maptiler.com/maps/streets/style.json?key=YOUR_KEY'
-    })
+    render_map_dev_tools
   end
 end
 ```
 
-### Custom Configuration
+### Style URL Integration
 
 ```ruby
 class MyApp < Sinatra::Base
   register MapDevTools::Extension
   
-  configure do
-    set :map_dev_tools_options, {
-      center: [37.6173, 55.7558],  # Moscow coordinates
-      zoom: 10,
-      basemap_tiles: [
-        'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
-      ],
-      basemap_attribution: '© OpenStreetMap contributors'
-    }
-  end
-  
   get '/map' do
+    # Style URL passed via params[:style_url]
     render_map_dev_tools
   end
 end
@@ -308,15 +295,14 @@ class MyApp < Sinatra::Base
   register MapDevTools::Extension
   
   get '/map' do
-    render_map_dev_tools({
-      style_url: params[:style_url]
-    })
+    # Uses params[:style_url] if provided
+    render_map_dev_tools
   end
   
   get '/terrain' do
-    render_map_dev_tools({
-      style_url: 'https://example.com/terrain-style.json'
-    })
+    # Set style URL via params
+    params[:style_url] = 'https://example.com/terrain-style.json'
+    render_map_dev_tools
   end
 end
 ```
